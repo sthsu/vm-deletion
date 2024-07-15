@@ -1,17 +1,20 @@
-from repository.identity import AzureIdentity
-from repository.compute import AzureCompute
-from repository.compute.manager import VMManager
-from config.config import Config
+import logging
+from repository.compute_manager import VMManager
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class CleanupVmsFunction:
-    def __init__(self):
-        # List of resource groups to check
-        self.resource_groups = ["ResourceGroup1", "ResourceGroup2"]
-        self.identity = AzureIdentity()
-        self.credential = self.identity.get_credential()
-        self.subscription_id = Config.get_subscription_id()
-        self.compute = AzureCompute(self.credential, self.subscription_id)
-        self.vm_manager = VMManager(self.compute)
+    def __init__(self, subscription_id: str, resource_group_list: list[str]):
+        self.resource_groups = resource_group_list
+        self.subscription_id = subscription_id
+        self.vm_manager = VMManager(subscription_id)
 
-    def run(self):
-        self.vm_manager.delete_stopped_vms(self.resource_groups)
+    async def run(self):
+        try:
+            logger.info("Starting cleanup of stopped/deallocated VMs in resource groups: %s", self.resource_groups)
+            await self.vm_manager.delete_stopped_vms(self.resource_groups)
+            logger.info("Cleanup of stopped/deallocated VMs completed successfully")
+        except Exception as e:
+            logger.error("An error occurred during VM cleanup: %s", str(e))
+            raise
