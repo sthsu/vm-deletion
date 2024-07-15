@@ -23,36 +23,6 @@ logger = logging.getLogger(__name__)
 
 app = func.FunctionApp()
 
-# @app.function_name(name="CleanupVMs")
-# @app.schedule(schedule="0 0 * * * *", arg_name="mytimer", run_on_startup=True, use_monitor=False)
-# async def main(mytimer: func.TimerRequest):
-#     logging.info('Azure Function timer trigger executed at: %s', mytimer.past_due)
-#     try:
-#         subscription_id = os.environ.get("SUBSCRIPTION_ID")
-#         resource_group_list_str = os.environ.get("RESOURCE_GROUP_LIST")
-        
-#         if not subscription_id:
-#             logger.error("SUBSCRIPTION_ID environment variable is not set")
-        
-#         if not resource_group_list_str:
-#             logger.error("RESOURCE_GROUP_LIST environment variable is not set")
-
-#         try:
-#             resource_group_list = json.loads(resource_group_list_str)
-#             if not isinstance(resource_group_list, list):
-#                 raise ValueError("RESOURCE_GROUP_LIST is not a valid list")
-#         except json.JSONDecodeError as e:
-#             logger.error("Failed to parse RESOURCE_GROUP_LIST: %s", str(e))
-
-#         cleanup_function = CleanupVmsFunction(subscription_id, resource_group_list)
-#         await cleanup_function.run()
-      
-#         logger.info("Cleanup VMs function executed successfully")
-#     except ImportError as e:
-#         logger.error(f"Failed to import module: {str(e)}")        
-#     except Exception as e:
-#         logger.error("An error occurred: %s", str(e))
-
 @app.function_name(name="CleanupVMs")
 @app.schedule(schedule="0 0 * * * *", arg_name="mytimer", run_on_startup=True, use_monitor=False)
 def main(mytimer: func.TimerRequest):
@@ -61,17 +31,47 @@ def main(mytimer: func.TimerRequest):
         subscription_id = os.environ.get("SUBSCRIPTION_ID")
         resource_group_list_str = os.environ.get("RESOURCE_GROUP_LIST")
         
-        credentials = DefaultAzureCredential()
-        compute_client = ComputeManagementClient(credentials,subscription_id)
+        if not subscription_id:
+            logger.error("SUBSCRIPTION_ID environment variable is not set")
+        
+        if not resource_group_list_str:
+            logger.error("RESOURCE_GROUP_LIST environment variable is not set")
 
-        vms = compute_client.virtual_machines.list("1-9a6b55b8-playground-sandbox")
-        for vm in vms:
-            logging.warning(f'Deleting VM: {vm.name}')
-            async_vm_delete=compute_client.virtual_machines.begin_delete("1-9a6b55b8-playground-sandbox",vm.name)
-            async_vm_delete.result()
+        try:
+            resource_group_list = json.loads(resource_group_list_str)
+            if not isinstance(resource_group_list, list):
+                raise ValueError("RESOURCE_GROUP_LIST is not a valid list")
+        except json.JSONDecodeError as e:
+            logger.error("Failed to parse RESOURCE_GROUP_LIST: %s", str(e))
+
+        cleanup_function = CleanupVmsFunction(subscription_id, resource_group_list)
+        cleanup_function.run()
       
         logger.info("Cleanup VMs function executed successfully")
     except ImportError as e:
         logger.error(f"Failed to import module: {str(e)}")        
     except Exception as e:
         logger.error("An error occurred: %s", str(e))
+
+# @app.function_name(name="CleanupVMs")
+# @app.schedule(schedule="0 0 * * * *", arg_name="mytimer", run_on_startup=True, use_monitor=False)
+# def main(mytimer: func.TimerRequest):
+#     logging.info('Azure Function timer trigger executed at: %s', mytimer.past_due)
+#     try:
+#         subscription_id = os.environ.get("SUBSCRIPTION_ID")
+#         resource_group_list_str = os.environ.get("RESOURCE_GROUP_LIST")
+        
+#         credentials = DefaultAzureCredential()
+#         compute_client = ComputeManagementClient(credentials,subscription_id)
+
+#         vms = compute_client.virtual_machines.list("1-9a6b55b8-playground-sandbox")
+#         for vm in vms:
+#             logging.warning(f'Deleting VM: {vm.name}')
+#             async_vm_delete=compute_client.virtual_machines.begin_delete("1-9a6b55b8-playground-sandbox",vm.name)
+#             async_vm_delete.result()
+      
+#         logger.info("Cleanup VMs function executed successfully")
+#     except ImportError as e:
+#         logger.error(f"Failed to import module: {str(e)}")        
+#     except Exception as e:
+#         logger.error("An error occurred: %s", str(e))

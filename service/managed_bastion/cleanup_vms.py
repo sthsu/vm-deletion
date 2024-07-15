@@ -1,5 +1,5 @@
 import logging
-from repository.compute_manager import VMManager
+from repository.vm_manager import VMManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -10,10 +10,10 @@ class CleanupVmsFunction:
         self.subscription_id = subscription_id
         self.vm_manager = VMManager(subscription_id)
 
-    async def run(self):
+    def run(self):
         try:
             logger.info("Starting cleanup of stopped/deallocated VMs in resource groups: %s", self.resource_groups)
-            await self.vm_manager.delete_stopped_vms(self.resource_groups)
+            self.vm_manager.delete_deallocated_vms(self.resource_groups)
             logger.info("Cleanup of stopped/deallocated VMs completed successfully")
         except Exception as e:
             logger.error("An error occurred during VM cleanup: %s", str(e))
