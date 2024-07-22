@@ -59,22 +59,23 @@ class VMManager:
     
     def delete_deallocated_vms(self, resource_group_list: List[str]):
         try:
-            deletion_futures={}
             deallocated_vms = self.get_deallocated_vms(resource_group_list)
             with ThreadPoolExecutor() as executor:
+                futures = {}
                 for vm in deallocated_vms:
                     logging.warning(f'Deleting VM: {vm.name}')
-                    future = executor.submit(self.compute_client.virtual_machines.begin_delete(vm.resource_group_name,vm.name))
-                    deletion_futures[future] = vm.name
-            for future in as_completed(deletion_futures.keys()):
-                vm_name = deletion_futures[future]
+                    future = executor.submit(
+                        lambda vm=vm: self.compute_client.virtual_machines.begin_delete(vm.resource_group_name, vm.name).result()
+                    )
+                    futures[future] = vm.name
+
+            for future in as_completed(futures.keys()):
+                vm_name = futures[future]
                 try:
                     future.result()
-                    logger.info(f"VM {vm_name} has been deleted successfully.")
+                    logging.info(f"VM {vm_name} has been deleted successfully.")
                 except Exception as e:
                     logging.error(f'An error occurred during delete of VM "{vm_name}": {e}')
-            return True
         except Exception as e:
             logger.error(f"Failed to delete deallocated vms: {e}")
             return False
-
