@@ -38,7 +38,7 @@ def main(mytimer: func.TimerRequest):
             logger.error("RESOURCE_GROUP_LIST environment variable is not set")
 
         try:
-            resource_group_list = json.loads(resource_group_list_str)
+            resource_group_list = resource_group_list_str.split(",")
             if not isinstance(resource_group_list, list):
                 raise ValueError("RESOURCE_GROUP_LIST is not a valid list")
         except json.JSONDecodeError as e:
