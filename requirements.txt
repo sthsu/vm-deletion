@@ -6,3 +6,5 @@ azure-functions
 azure-identity
 azure-mgmt-compute
 aiohttp
+pytest
+pytest-cov
